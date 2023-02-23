@@ -1,4 +1,5 @@
 const express = require('express');
+const { Blob } = require('buffer');
 const { spawn } = require('child_process');
 const app = express();
 const port = 3000;
@@ -6,9 +7,16 @@ const port = 3000;
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  var dataToSend;
+  let data = '';
+  let dataToSend;
+  const buff = Buffer.from(['myString']); // Node.js Buffer
+  const blob = new Blob([buff]); // JavaScript Blob
+
+  req.on('data', (chunk) => {
+    data += chunk;
+  });
   // spawn new child process to call the python script
-  const python = spawn('python3', [__dirname + '/HelloWorld.py']);
+  const python = spawn('python3', [__dirname + '/HelloWorld.py', blob]);
   // collect data from script
   python.stdout.on('data', (data) => {
     console.log('Pipe data from python script ...');
@@ -20,9 +28,8 @@ app.get('/', (req, res) => {
     // send data to browser
     res.status(200).send(dataToSend);
   });
-  //res.status(200).send('Hello World');
 });
 
 app.listen(port, () => {
-  console.log('Server listening at http://localhost:3000');
+  console.log(`Server listening at http://localhost:${port}`);
 });
